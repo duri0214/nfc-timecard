@@ -12,19 +12,27 @@ NFCリーダー(PaSoRi)でマイナンバーカードをタップして、出勤
 
 ---
 
-## セットアップ（uv 前提）
+## uvのインストール（初回のみ）
 
-`pyproject.toml` に依存を追加・更新したら、プロジェクト直下で以下を実行します。
+このプロジェクトは **uv** というパッケージマネージャーを使用しています。
+
+### uvとは？
+- **Rust製の高速なPythonパッケージマネージャー**
+- `pip` や `poetry` より圧倒的に高速
+- **重要**: `pip install uv` ではインストールできません
+  - Python（`python`コマンド）やpip（`pip`コマンド）は、Pythonインストール時に自動的にPATHに登録されるため意識する必要がありません
+  - しかし、**uvはPythonとは独立したスタンドアロンツール**なので、別途インストールしてPATHに登録する必要があります
+
+### インストール方法（Windows）
 
 ```powershell
-# 依存ロックと同期（.venv が無ければ自動作成）
-uv lock
-uv sync
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-任意で仮想環境を有効化する場合:
+インストール後はPowerShell（やPyCharm）を再起動してください。以下で確認できます:
 ```powershell
-./.venv/Scripts/Activate.ps1
+uv --version
+Get-Command uv
 ```
 
 ## Windows用ドライバ（WinUSB）
@@ -106,7 +114,10 @@ curl -X POST "http://127.0.0.1:8000/punch?employee_id=TEST001"
 ---
 
 ## トラブルシュート
-- `ImportError: No module named fastapi` → 仮想環境が未有効または依存が未インストール。`Activate.ps1` と `uv pip install -e .` を再実行
+- `uv: command not found` または `用語 'uv' は...認識されません` → uvがインストールされていないか、PATHに登録されていません
+  - **解決方法1（推奨）**: 上記の「uvのインストール」セクションに従ってuvをインストールしてください
+  - **解決方法2（一時的）**: uvなしで実行する場合は、仮想環境を有効化 (`.\.venv\Scripts\Activate.ps1`) してから `python -m uvicorn app.main:app --reload` や `python nfc_watch.py` を直接実行してください
+- `ImportError: No module named fastapi` → 仮想環境が未有効または依存が未インストール。`Activate.ps1` と `uv sync` を再実行
 - `python -m nfc` で読取待ちにならない → ZadigでWinUSBドライバを再確認
 - PaSoRiの型番によっては名前が異なる場合あり（"Sony RC-S380" など）
 
