@@ -66,9 +66,13 @@ uv run uvicorn app.main:app --reload
     $env:UV_LINK_MODE = 'copy'
     uv run uvicorn app.main:app --reload
     ```
-  - 恒久設定: 次の一度きりの設定で常にコピー方式に変更できます
+  - 恒久設定: 環境変数を永続化して常にコピー方式にします（uv の `config` サブコマンドが無い版でも有効）
     ```powershell
-    uv config set link-mode copy
+    # 現ユーザーに永続（推奨）
+    [Environment]::SetEnvironmentVariable('UV_LINK_MODE', 'copy', 'User')
+    # または Windows 標準の setx を使用
+    setx UV_LINK_MODE copy
+    # 反映には新しいターミナルを開く/再ログインが必要です
     ```
   - それでも `.venv` の削除に失敗する場合（os error 5 など）は、OneDrive を一時停止してから `.venv` を作り直してください
     ```powershell
@@ -144,7 +148,16 @@ curl -X POST "http://127.0.0.1:8000/punch?employee_id=TEST001"
 
 ### OneDrive 配下での `uv` エラー
 - `os error 396`（ハードリンク失敗）: OneDrive のクラウド管理下ではハードリンクが使えない場合があります。
-  - 回避: 一時的に `UV_LINK_MODE=copy` で実行、または `uv config set link-mode copy` を実施
+  - 回避: 一時的に `UV_LINK_MODE=copy` で実行、または 環境変数を永続化
+    ```powershell
+    # 一時（そのシェルのみ）
+    $env:UV_LINK_MODE = 'copy'
+    # 永続（現ユーザー）
+    [Environment]::SetEnvironmentVariable('UV_LINK_MODE', 'copy', 'User')
+    # または
+    setx UV_LINK_MODE copy
+    # 新しいターミナルを開いて有効化
+    ```
 - `os error 5`（アクセス拒否/削除失敗）: `.venv` 内のファイルがロックされて削除できないケース
   - 回避: OneDrive 同期を一時停止し、Python/uvicorn を終了後に `.venv` を削除→`uv sync` で再構築
   - さらに安定: プロジェクトを OneDrive 外へ移動、もしくはフォルダを「このデバイスに常に保持」に設定
