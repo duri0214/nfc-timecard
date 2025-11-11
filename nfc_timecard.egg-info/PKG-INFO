@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: nfc-timecard
+Version: 0.1.0
+Summary: Local Windows-only NFC timecard (FastAPI + nfcpy)
+Requires-Python: >=3.8
+License-File: LICENSE
+Requires-Dist: nfcpy>=1.0.4
+Requires-Dist: fastapi>=0.103.0
+Requires-Dist: uvicorn[standard]>=0.22.0
+Requires-Dist: pandas>=1.5.0
+Requires-Dist: setuptools>=61.0
+Dynamic: license-file

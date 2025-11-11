@@ -1,0 +1,5 @@
+nfcpy>=1.0.4
+fastapi>=0.103.0
+uvicorn[standard]>=0.22.0
+pandas>=1.5.0
+setuptools>=61.0

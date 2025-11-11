@@ -1,0 +1,12 @@
+LICENSE
+README.md
+pyproject.toml
+app/__init__.py
+app/domain.py
+app/main.py
+app/storage_csv.py
+nfc_timecard.egg-info/PKG-INFO
+nfc_timecard.egg-info/SOURCES.txt
+nfc_timecard.egg-info/dependency_links.txt
+nfc_timecard.egg-info/requires.txt
+nfc_timecard.egg-info/top_level.txt
