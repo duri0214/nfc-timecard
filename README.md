@@ -1,10 +1,10 @@
 # nfc-timecard
 
-ローカルWindows専用のNFC勤務表アプリ（KISS）。
-PaSoRiなどのNFCリーダーでマイナンバーカードをタップして、出勤/退勤をCSVに記録します。FastAPIでローカルAPIも提供します。
+ローカルWindows専用のNFC勤務表アプリ。
+NFCリーダー(PaSoRi)でマイナンバーカードをタップして、出勤/退勤をCSVに記録します。FastAPIでローカルAPIも提供します。
 
 ## できること（要件対応）
-- 対象カード：マイナンバーカード（My Number）。それ以外は原則無視（環境変数で緩和可）
+- 対象カード：マイナンバーカード。それ以外は原則無視（環境変数で緩和可）
 - 1日2回の打刻：出勤→退勤
 - 勤務時間 = 退勤 − 出勤 − 休憩1時間（マイナスは0扱い）
 - 保存先：`./data/records.csv`（ローカルのみ）
@@ -12,40 +12,28 @@ PaSoRiなどのNFCリーダーでマイナンバーカードをタップして�
 
 ---
 
-## インストール（Windows, uv推奨）
+## セットアップ（uv 前提）
 
-uv を使うと高速・隔離された環境になります。
+`pyproject.toml` に依存を追加・更新したら、プロジェクト直下で以下を実行します。
 
-1) uv のインストール（どれか1つ）
-- winget:
-  ```powershell
-  winget install --id=astral-sh.uv -e
-  ```
-- または pipx:
-  ```powershell
-  pipx install uv
-  ```
-- または単発ダウンロード（参考）: https://github.com/astral-sh/uv
-
-2) 仮想環境の作成と有効化
 ```powershell
-uv venv
+# 依存ロックと同期（.venv が無ければ自動作成）
+uv lock
+uv sync
+```
+
+任意で仮想環境を有効化する場合:
+```powershell
 ./.venv/Scripts/Activate.ps1
 ```
 
-3) 依存関係のインストール（`pyproject.toml` から）
-```powershell
-uv pip install -U pip
-uv pip install -e .
-```
-
-4) Windows用 ドライバ（WinUSB）の導入
+## Windows用ドライバ（WinUSB）
 - Zadig をダウンロード: https://zadig.akeo.ie/
 - NFCリーダーを接続
 - Zadig → Options → "List All Devices" をON
 - デバイス一覧から NFCリーダー（PaSoRi等）を選択 → Driver に "WinUSB" を選び Install Driver
 
-5) nfcpy 動作確認
+## nfcpy 動作確認
 ```powershell
 python -m nfc
 ```
