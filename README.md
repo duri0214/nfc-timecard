@@ -53,11 +53,32 @@ python -m nfc
 
 ### 1) APIサーバを起動
 ```powershell
-uvx uvicorn app.main:app --reload
+uv run uvicorn app.main:app --reload
 ```
 - ヘルスチェック: http://127.0.0.1:8000/health
 - レコード取得: http://127.0.0.1:8000/records
-- 日次集計: http://127.0.0.1:8000/summary/daily?date=YYYY-MM-DD
+- 日次集計: http://127.0.0.1:8000/summary/daily?date_str=YYYY-MM-DD
+
+補足（OneDrive 環境での注意）:
+- プロジェクトが OneDrive 配下にある場合、`uv` がハードリンクやクリーンアップで失敗することがあります。
+  - 一時回避: 同じシェルで `UV_LINK_MODE=copy` を設定してから実行
+    ```powershell
+    $env:UV_LINK_MODE = 'copy'
+    uv run uvicorn app.main:app --reload
+    ```
+  - 恒久設定: 次の一度きりの設定で常にコピー方式に変更できます
+    ```powershell
+    uv config set link-mode copy
+    ```
+  - それでも `.venv` の削除に失敗する場合（os error 5 など）は、OneDrive を一時停止してから `.venv` を作り直してください
+    ```powershell
+    # OneDrive 同期を一時停止 → すべての python/uvicorn を終了
+    Remove-Item -Recurse -Force .venv
+    $env:UV_LINK_MODE = 'copy'
+    uv sync
+    uv run uvicorn app.main:app --reload
+    ```
+  - より安定させるには、プロジェクトを OneDrive 外（例: `C:\dev\nfc-timecard`）に移すか、対象フォルダを「このデバイスに常に保持」に設定してください。
 
 ### 2) NFCウォッチャを起動（別ターミナルで）
 ```powershell
@@ -69,7 +90,7 @@ uv run nfc_watch.py
 ### 3) APIでレコード確認
 - 当日全件
   ```powershell
-  curl "http://127.0.0.1:8000/records?date=2025-11-11"
+  curl "http://127.0.0.1:8000/records?date_str=2025-11-11"
   ```
 - 社員別
   ```powershell
@@ -77,7 +98,7 @@ uv run nfc_watch.py
   ```
 - 日次集計
   ```powershell
-  curl "http://127.0.0.1:8000/summary/daily?date=2025-11-11"
+  curl "http://127.0.0.1:8000/summary/daily?date_str=2025-11-11"
   ```
 
 ### リーダーが無い場合の簡易テスト
@@ -120,6 +141,16 @@ curl -X POST "http://127.0.0.1:8000/punch?employee_id=TEST001"
 - `ImportError: No module named fastapi` → 仮想環境が未有効または依存が未インストール。`Activate.ps1` と `uv sync` を再実行
 - `python -m nfc` で読取待ちにならない → ZadigでWinUSBドライバを再確認
 - PaSoRiの型番によっては名前が異なる場合あり（"Sony RC-S380" など）
+
+### OneDrive 配下での `uv` エラー
+- `os error 396`（ハードリンク失敗）: OneDrive のクラウド管理下ではハードリンクが使えない場合があります。
+  - 回避: 一時的に `UV_LINK_MODE=copy` で実行、または `uv config set link-mode copy` を実施
+- `os error 5`（アクセス拒否/削除失敗）: `.venv` 内のファイルがロックされて削除できないケース
+  - 回避: OneDrive 同期を一時停止し、Python/uvicorn を終了後に `.venv` を削除→`uv sync` で再構築
+  - さらに安定: プロジェクトを OneDrive 外へ移動、もしくはフォルダを「このデバイスに常に保持」に設定
+
+### 補足: Python バージョン
+`pyproject.toml` の `requires-python` は `>=3.13` です。`uv` 経由では自動解決されますが、`python -m uvicorn` で直接起動する場合は Python 3.13 系を推奨します。
 
 ---
 
