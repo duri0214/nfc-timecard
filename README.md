@@ -124,7 +124,7 @@ curl -X POST "http://127.0.0.1:8000/punch?employee_id=TEST001"
 
 ---
 
-## 実装メモ（KISS）
+## 実装メモ
 - ストレージはCSVのみ（`app/storage_csv.py`）。必要なら将来SQLiteへ拡張
 - 業務ロジックは最小限（`app/domain.py`）
   - 勤務時間 = 退勤 − 出勤 − 1時間（最低0）
