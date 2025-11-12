@@ -53,9 +53,9 @@ def is_likely_my_number_card(tag: Any) -> bool:
     if os.environ.get("ACCEPT_ALL_TAGS", "").lower() in {"1", "true", "yes"}:
         return True
 
-    # Heuristic: Type 4 tags often have 'Type4Tag' in class name; accept those.
+    # Heuristic: Type 4 tags (including Type4BTag for My Number cards) are accepted.
     cls_name = type(tag).__name__
-    if "Type4Tag" in cls_name:
+    if "Type4" in cls_name:  # Matches Type4Tag, Type4BTag, Type4ATag, etc.
         return True
 
     # Fallback deny by default.
