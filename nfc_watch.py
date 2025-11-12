@@ -6,14 +6,14 @@ from datetime import datetime
 
 import nfc
 
-from app.domain import make_employee_id_from_tag_identifier, is_likely_my_number_card
+from app.domain import make_employee_id_from_tag_identifier, is_acceptable_card
 from app import storage_csv as store
 
 
 def on_connect(tag) -> bool:
     try:
-        if not is_likely_my_number_card(tag):
-            print(f"[WARN] Non-MyNumber tag ignored: {type(tag).__name__}")
+        if not is_acceptable_card(tag):
+            print(f"[WARN] Unsupported tag type ignored: {type(tag).__name__}")
             return True  # keep waiting for the next tag
 
         # Many tags expose 'identifier' as bytes
@@ -23,15 +23,44 @@ def on_connect(tag) -> bool:
             return True
 
         emp_id = make_employee_id_from_tag_identifier(identifier)
+
+        # Get the current state before punch
+        rows = store._load_all()
+        today = datetime.now().date()
+        existing_idx = store._find_row_index(rows, today, emp_id)
+        was_complete = False
+        if existing_idx is not None:
+            r = rows[existing_idx]
+            was_complete = bool(r.get("clock_in") and r.get("clock_out"))
+
         wr = store.punch(emp_id)
-        state = (
-            "clock-in" if wr.clock_in and not wr.clock_out else
-            "clock-out" if wr.clock_in and wr.clock_out else "updated"
-        )
-        print(
-            f"[{datetime.now().strftime('%H:%M:%S')}] {emp_id} -> {state} | "
-            f"in={wr.clock_in} out={wr.clock_out} hours={wr.hours}"
-        )
+
+        # Determine state based on before/after
+        if wr.clock_in and not wr.clock_out:
+            state = "clock-in"
+            print(
+                f"[{datetime.now().strftime('%H:%M:%S')}] {emp_id} -> {state} | "
+                f"in={wr.clock_in} out={wr.clock_out} hours={wr.hours}"
+            )
+        elif wr.clock_in and wr.clock_out and not was_complete:
+            state = "clock-out"
+            print(
+                f"[{datetime.now().strftime('%H:%M:%S')}] {emp_id} -> {state} | "
+                f"in={wr.clock_in} out={wr.clock_out} hours={wr.hours}"
+            )
+        elif wr.clock_in and wr.clock_out and was_complete:
+            state = "already-completed"
+            print(
+                f"[{datetime.now().strftime('%H:%M:%S')}] {emp_id} -> {state} | "
+                f"Today's timecard is already complete (in={wr.clock_in.strftime('%H:%M:%S')}, "
+                f"out={wr.clock_out.strftime('%H:%M:%S')}, hours={wr.hours})"
+            )
+        else:
+            state = "updated"
+            print(
+                f"[{datetime.now().strftime('%H:%M:%S')}] {emp_id} -> {state} | "
+                f"in={wr.clock_in} out={wr.clock_out} hours={wr.hours}"
+            )
 
         # Cooldown to prevent double-read from the same tap
         time.sleep(1.0)

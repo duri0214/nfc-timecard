@@ -97,19 +97,18 @@ def punch(employee_id: str, now: Optional[datetime] = None) -> WorkRecord:
     co = _parse_dt(r.get("clock_out", ""))
     if ci is None:
         r["clock_in"] = now.isoformat()
+        rows[idx] = r
+        _save_all(rows)
     elif co is None:
         r["clock_out"] = now.isoformat()
         hrs = compute_hours(ci, now)
         r["hours"] = f"{hrs:.2f}"
-    else:
-        # both exist already; start a new record for the same day
-        wr = WorkRecord(work_date=today, employee_id=employee_id, clock_in=now)
-        rows.append(wr.to_row())
+        rows[idx] = r
         _save_all(rows)
-        return wr
+    else:
+        # both exist already; ignore further punches for today
+        pass  # Do nothing, return existing record
 
-    rows[idx] = r
-    _save_all(rows)
     return WorkRecord(
         work_date=today,
         employee_id=employee_id,

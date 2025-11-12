@@ -27,7 +27,7 @@ class WorkRecord:
 
 
 def compute_hours(clock_in: datetime, clock_out: datetime) -> float:
-    """Compute working hours with fixed 1-hour break deducted; min 0."""
+    """Compute working hours with a fixed 1-hour break deducted; min 0."""
     delta = clock_out - clock_in - ONE_HOUR
     if delta.total_seconds() < 0:
         return 0.0
@@ -40,22 +40,28 @@ def make_employee_id_from_tag_identifier(identifier: bytes) -> str:
     return identifier.hex().upper()
 
 
-def is_likely_my_number_card(tag: Any) -> bool:
-    """Best-effort, local-only heuristic to filter My Number cards.
+def is_acceptable_card(tag: Any) -> bool:
+    """Check if the tag is an acceptable card type for the timecard system.
 
     Notes:
-    - Real My Number (JPKI) cards are ISO/IEC 14443 Type B (Type4 Tag).
-    - nfcpy exposes different tag classes per chipset; reliable detection can be complex.
-    - For KISS and local use, we provide a heuristic and allow override via env.
+    - Accepts FeliCa cards (PASMO, Suica, etc.) - recommended
+    - Accepts Type4 tags (My Number cards) - but UID is randomized, not recommended
+    - For local use and testing flexibility, allow override via env.
     """
     import os
 
     if os.environ.get("ACCEPT_ALL_TAGS", "").lower() in {"1", "true", "yes"}:
         return True
 
-    # Heuristic: Type 4 tags (including Type4BTag for My Number cards) are accepted.
     cls_name = type(tag).__name__
-    if "Type4" in cls_name:  # Matches Type4Tag, Type4BTag, Type4ATag, etc.
+
+    # Accept FeliCa cards (PASMO, Suica, etc.) - these have stable IDs
+    if "FeliCa" in cls_name or "Type3Tag" in cls_name:
+        return True
+
+    # Accept Type 4 tags (including Type4BTag for My Number cards)
+    # Note: My Number cards have randomized UIDs, so not ideal for identification
+    if "Type4" in cls_name:
         return True
 
     # Fallback deny by default.
