@@ -1,0 +1,7 @@
+# Ignore all CSV files (timecard records)
+*.csv
+
+# Ignore all data files
+*.json
+*.xlsx
+*.db
