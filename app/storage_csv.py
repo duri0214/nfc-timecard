@@ -5,7 +5,7 @@ import os
 from datetime import datetime, date
 from typing import List, Dict, Optional
 
-from .domain import WorkRecord, compute_hours
+from .domain import WorkRecord, compute_hours, EmployeeId
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 CSV_PATH = os.path.join(DATA_DIR, "records.csv")
@@ -55,9 +55,13 @@ def get_records(date_filter: Optional[date] = None, employee_id: Optional[str] =
             continue
         if employee_id and r.get("employee_id") != employee_id:
             continue
+        emp = r.get("employee_id", "")
+        # Skip rows without a valid employee_id
+        if not emp:
+            continue
         wr = WorkRecord(
             work_date=d,
-            employee_id=r.get("employee_id", ""),
+            employee_id=EmployeeId.from_raw(emp),
             clock_in=_parse_dt(r.get("clock_in", "")),
             clock_out=_parse_dt(r.get("clock_out", "")),
             hours=float(r["hours"]) if r.get("hours") else None,
@@ -86,7 +90,7 @@ def punch(employee_id: str, now: Optional[datetime] = None) -> WorkRecord:
 
     idx = _find_row_index(rows, today, employee_id)
     if idx is None:
-        wr = WorkRecord(work_date=today, employee_id=employee_id, clock_in=now)
+        wr = WorkRecord(work_date=today, employee_id=EmployeeId.from_raw(employee_id), clock_in=now)
         rows.append(wr.to_row())
         _save_all(rows)
         return wr
@@ -111,7 +115,7 @@ def punch(employee_id: str, now: Optional[datetime] = None) -> WorkRecord:
 
     return WorkRecord(
         work_date=today,
-        employee_id=employee_id,
+        employee_id=EmployeeId.from_raw(employee_id),
         clock_in=_parse_dt(r.get("clock_in", "")),
         clock_out=_parse_dt(r.get("clock_out", "")),
         hours=float(r["hours"]) if r.get("hours") else None,
@@ -124,5 +128,6 @@ def daily_summary(d: date) -> Dict[str, float]:
     total: Dict[str, float] = {}
     for r in records:
         if r.hours is not None:
-            total[r.employee_id] = total.get(r.employee_id, 0.0) + r.hours
+            key = str(r.employee_id)
+            total[key] = total.get(key, 0.0) + r.hours
     return total
