@@ -2,7 +2,6 @@ LICENSE
 README.md
 pyproject.toml
 app/__init__.py
-app/domain.py
 app/main.py
 app/storage_csv.py
 nfc_timecard.egg-info/PKG-INFO
