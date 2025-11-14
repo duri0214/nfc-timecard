@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta, date
 
@@ -47,20 +48,16 @@ class TimecardService:
     def is_acceptable_card(tag: object) -> bool:
         """NFCタグが受け入れ可能か判定。
 
+        PASMO等のFeliCa (Type3Tag) のみを受け付けます。
         環境変数 ACCEPT_ALL_TAGS=1/true/yes で強制許可。
-        既知のタグクラス名以外は ValueError を送出して明示的に拒否。
+        FeliCa/Type3Tag以外は ValueError を送出して明示的に拒否。
         """
-        import os
-
         if os.environ.get("ACCEPT_ALL_TAGS", "").lower() in {"1", "true", "yes"}:
             return True
 
         cls_name = type(tag).__name__
-        # FeliCa / Type3Tag は安定UID
+        # FeliCa / Type3Tag は安定UID (PASMO等)
         if ("FeliCa" in cls_name) or ("Type3Tag" in cls_name):
-            return True
-        # Type4Tag / Type4BTag など
-        if "Type4" in cls_name:
             return True
 
         raise ValueError(f"未対応のタグ種別です: {cls_name}")
