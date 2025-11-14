@@ -55,7 +55,7 @@ class TimecardCsvStore:
             return None
         try:
             return datetime.fromisoformat(s)
-        except Exception:
+        except ValueError:
             return None
 
     # Public API
