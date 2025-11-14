@@ -9,8 +9,6 @@ import nfc
 from app.domain.service import TimecardCsvStore, TimecardService
 from app.domain.valueobject import EmployeeId
 
-store = TimecardCsvStore.default()
-
 
 def on_connect(tag) -> bool:
     if not TimecardService.is_acceptable_card(tag):
@@ -27,13 +25,13 @@ def on_connect(tag) -> bool:
 
     # Get the current state before punch
     today: date = datetime.now().date()
-    recs = store.get_records(date_filter=today, employee_id=emp_id)
+    recs = TimecardCsvStore.default().get_records(date_filter=today, employee_id=emp_id)
     was_complete = False
     if recs:
         r0 = recs[0]
         was_complete = bool(r0.clock_in and r0.clock_out)
 
-    wr = store.punch(emp_id)
+    wr = TimecardCsvStore.default().punch(emp_id)
 
     # Determine state based on before/after
     if wr.clock_in and not wr.clock_out:
