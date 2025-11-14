@@ -22,7 +22,7 @@ class TimecardCsvStore:
         self.csv_path = os.path.join(self.data_dir, "records.csv")
 
     @classmethod
-    def default(cls) -> "TimecardCsvStore":
+    def default(cls) -> TimecardCsvStore:
         # app/ からの相対で data/ ディレクトリ
         base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         data_dir = os.path.join(base, "data")
@@ -86,7 +86,9 @@ class TimecardCsvStore:
         return out
 
     @staticmethod
-    def _find_row_index(rows: list[dict[str, str]], d: date, employee_id: str) -> int | None:
+    def _find_row_index(
+        rows: list[dict[str, str]], d: date, employee_id: str
+    ) -> int | None:
         for i, r in enumerate(rows):
             if r.get("date") == d.isoformat() and r.get("employee_id") == employee_id:
                 return i
@@ -102,7 +104,9 @@ class TimecardCsvStore:
         idx = self._find_row_index(rows, today, employee_id)
         if idx is None:
             wr = WorkRecord(
-                work_date=today, employee_id=EmployeeId.from_raw(employee_id), clock_in=now
+                work_date=today,
+                employee_id=EmployeeId.from_raw(employee_id),
+                clock_in=now,
             )
             rows.append(wr.to_row())
             self._save_all(rows)
