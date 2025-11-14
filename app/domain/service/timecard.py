@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, date
-from typing import Final, Literal
 
-from .valueobject import EmployeeId
+from ..valueobject import EmployeeId
 
 
-ONE_HOUR: Final[timedelta] = timedelta(hours=1)
+# 休憩1時間
+ONE_HOUR = timedelta(hours=1)
 
 
 @dataclass
@@ -28,12 +28,8 @@ class WorkRecord:
         }
 
 
-# 明示的に扱うタグのクラス名（nfcpyなどの代表）
-TagClassName = Literal["FeliCa", "Type3Tag", "Type4Tag", "Type4BTag"]
-
-
 class TimecardService:
-    """アプリケーションサービス。
+    """タイムカード関連のドメインサービス。
 
     - 勤務時間計算
     - NFCタグ受け入れ可否
@@ -48,17 +44,6 @@ class TimecardService:
         return round(delta.total_seconds() / 3600.0, 2)
 
     @staticmethod
-    def is_acceptable_card_name(tag_class: TagClassName) -> bool:
-        """許可する既知のタグクラス名か判定。"""
-        # FeliCa/Type3 は安定UID
-        if tag_class in ("FeliCa", "Type3Tag"):
-            return True
-        # Type4/Type4B はUIDランダムの可能性があるので非推奨だが許可
-        if tag_class in ("Type4Tag", "Type4BTag"):
-            return True
-        return False  # Literalで型は絞っているが将来の保険
-
-    @staticmethod
     def is_acceptable_card(tag: object) -> bool:
         """NFCタグが受け入れ可能か判定。
 
@@ -71,19 +56,11 @@ class TimecardService:
             return True
 
         cls_name = type(tag).__name__
-        if any(key in cls_name for key in ("FeliCa", "Type3Tag")):
+        # FeliCa / Type3Tag は安定UID
+        if ("FeliCa" in cls_name) or ("Type3Tag" in cls_name):
             return True
-        if "Type4" in cls_name:  # Type4Tag / Type4BTag など
+        # Type4Tag / Type4BTag など
+        if "Type4" in cls_name:
             return True
 
-        # 既知以外は例外で通知（Anyを避け、明示的に制限）
         raise ValueError(f"未対応のタグ種別です: {cls_name}")
-
-
-# 既存互換のトップレベル関数（既存コードからの呼び出しを壊さないため）
-def compute_hours(clock_in: datetime, clock_out: datetime) -> float:
-    return TimecardService.compute_hours(clock_in, clock_out)
-
-
-def is_acceptable_card(tag: object) -> bool:
-    return TimecardService.is_acceptable_card(tag)

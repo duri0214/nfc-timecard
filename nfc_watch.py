@@ -2,17 +2,19 @@ from __future__ import annotations
 
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, date
 
 import nfc
 
-from app.domain import make_employee_id_from_tag_identifier, is_acceptable_card
-from app import storage_csv as store
+from app.domain.service import TimecardCsvStore, TimecardService
+from app.domain.valueobject import EmployeeId
+
+store = TimecardCsvStore.default()
 
 
 def on_connect(tag) -> bool:
     try:
-        if not is_acceptable_card(tag):
+        if not TimecardService.is_acceptable_card(tag):
             print(f"[WARN] Unsupported tag type ignored: {type(tag).__name__}")
             return True  # keep waiting for the next tag
 
@@ -22,16 +24,15 @@ def on_connect(tag) -> bool:
             print("[WARN] Tag has no identifier; ignored")
             return True
 
-        emp_id = make_employee_id_from_tag_identifier(identifier)
+        emp_id = str(EmployeeId.from_tag_identifier(identifier))
 
         # Get the current state before punch
-        rows = store._load_all()
-        today = datetime.now().date()
-        existing_idx = store._find_row_index(rows, today, emp_id)
+        today: date = datetime.now().date()
+        recs = store.get_records(date_filter=today, employee_id=emp_id)
         was_complete = False
-        if existing_idx is not None:
-            r = rows[existing_idx]
-            was_complete = bool(r.get("clock_in") and r.get("clock_out"))
+        if recs:
+            r0 = recs[0]
+            was_complete = bool(r0.clock_in and r0.clock_out)
 
         wr = store.punch(emp_id)
 
